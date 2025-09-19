@@ -35,5 +35,22 @@ router.post("/signup", async (req,res)=>{
     }
 })
 
+router.post("/login", async(req,res)=>{
+    try {
+        const {email,password}= req.body;
+        const user = await prisma.user.findUnique({where:{email}});
+        if(!user|| user.password !== password){
+            return res.status(401).json({error:"Invalid Credentials"});
+        }
+        const token= generateToken(user);
+        res.status(200).json({role:user.role,token});
+    } catch (error) {
+        console.error(error);
+    }
+})
+router.post("/logout", (req, res) => {
+  res.json({ message: "Logged out (delete token on client)" });
+});
+
 
 module.exports= router;
