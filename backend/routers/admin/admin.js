@@ -49,5 +49,34 @@ router.post("/users",authMiddleware,isAdmin,async(req,res)=>{
 
     }
 })
+
+router.get("/stores",authMiddleware,isAdmin,async(req,res)=>{
+    try {
+        const {name,email,address,sortBy="id",order="asc"}= req.query;
+        const stores = await prisma.store.findMany({
+      where: {
+        name: name ? { contains: name, mode: "insensitive" } : undefined,
+        email: email ? { contains: email, mode: "insensitive" } : undefined,
+        address: address ? { contains: address, mode: "insensitive" } : undefined,
+      },
+      orderBy: { [sortBy]: order },
+      include: {
+        ratings: true,
+      },
+    });
+    const storesWithRating = stores.map((s) => {
+      const avgRating =
+        s.ratings.length > 0
+          ? s.ratings.reduce((a, b) => a + b.rating, 0) / s.ratings.length
+          : 0;
+      return { ...s, averageRating: avgRating.toFixed(1) };
+    });
+
+    res.json(storesWithRating);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch stores" });
+  }
+});
 module.exports= router;
 
