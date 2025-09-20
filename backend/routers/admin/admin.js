@@ -23,5 +23,16 @@ router.get("/dashboard",authMiddleware,isAdmin,async(req,res)=>{
     }
 })
 
+router.post("/stores",authMiddleware,isAdmin,async (req,res)=>{
+    try {
+        const {name,email,address,ownerId}=req.body;
+        const store= await prisma.store.create({
+            data:{name,email,address,ownerId},
+        });
+        res.status(201).json(store);
+    } catch (error) {
+        console.log(error)
+    }
+})
 module.exports= router;
 
