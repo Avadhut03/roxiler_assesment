@@ -5,6 +5,7 @@ const {PrismaClient} = require("@prisma/client");
 
 const authRoute= require("./routers/auth/auth");
 const adminRoute= require("./routers/admin/admin")
+const userRoute= require("./routers/users/user");
 
 dotenv.config();
 
@@ -14,6 +15,7 @@ app.use(express.json());
 
 app.use("/auth",authRoute);
 app.use("/admin",adminRoute);
+app.use("/user",userRoute);
 const PORT = process.env.PORT || 8000;
 
 app.listen(PORT, ()=>{

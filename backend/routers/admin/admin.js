@@ -112,8 +112,6 @@ router.get("/users/:id", authMiddleware, isAdmin, async (req, res) => {
     });
 
     if (!user) return res.status(404).json({ error: "User not found" });
-
-    // If user is store owner, show their store ratings
     let ownerRatings = null;
     if (user.role === "OWNER" && user.stores.length > 0) {
       ownerRatings = user.stores.map((store) => {
