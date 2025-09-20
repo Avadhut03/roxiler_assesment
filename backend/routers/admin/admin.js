@@ -34,5 +34,20 @@ router.post("/stores",authMiddleware,isAdmin,async (req,res)=>{
         console.log(error)
     }
 })
+
+router.post("/users",authMiddleware,isAdmin,async(req,res)=>{
+    try {
+        const {name,email,password,address,role}=req.body;
+        const existing= await prisma.user.findUnique({where:{email}});
+        if(existing) res.json({message:"User already exists"});
+        const user= await prisma.user.create({
+            data:{name,email,password,address,role}
+        })
+        res.status(201).json(user);
+    } catch (error) {
+        console.log(error)
+
+    }
+})
 module.exports= router;
 
