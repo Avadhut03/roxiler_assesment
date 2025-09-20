@@ -78,5 +78,61 @@ router.get("/stores",authMiddleware,isAdmin,async(req,res)=>{
     res.status(500).json({ error: "Failed to fetch stores" });
   }
 });
+
+router.get("/users",authMiddleware,isAdmin,async(req,res)=>{
+    try {
+        const {name,email,address,role,sortBy="id",order="asc"}=req.query;
+        const users= await prisma.user.findMany({
+            where:{
+                name:name ? {contains:name,mode:"insensitive"}:undefined,
+                email:email ? {contains:email,mode:"insensitive"}:undefined,
+                address:address ? {contains:address,mode:"insensitive"}:undefined,
+                role:role ? role:undefined,
+            },
+            orderBy:{[sortBy]:order
+            }
+        })
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({error:"Failed to fetch users"});
+    }
+})
+
+router.get("/users/:id", authMiddleware, isAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        stores: {
+          include: { ratings: true },
+        },
+      },
+    });
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // If user is store owner, show their store ratings
+    let ownerRatings = null;
+    if (user.role === "OWNER" && user.stores.length > 0) {
+      ownerRatings = user.stores.map((store) => {
+        const avg =
+          store.ratings.length > 0
+            ? store.ratings.reduce((a, b) => a + b.rating, 0) /
+              store.ratings.length
+            : 0;
+        return { storeName: store.name, averageRating: avg.toFixed(1) };
+      });
+    }
+
+    res.json({ ...user, ownerRatings });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch user details" });
+  }
+});
+
+
 module.exports= router;
 
