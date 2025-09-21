@@ -1,6 +1,7 @@
 const express = require("express");
 const { PrismaClient } = require("@prisma/client");
 const authMiddleware = require("../../middleware/authMiddleware");
+
 const router = express.Router();
 const prisma = new PrismaClient();
 
@@ -12,28 +13,29 @@ router.get("/stores", authMiddleware, async (req, res) => {
       where: {
         AND: [
           name ? { name: { contains: name, mode: "insensitive" } } : {},
-          address ? { address: { contains: address, mode: "insensitive" } } : {}
-        ]
+          address ? { address: { contains: address, mode: "insensitive" } } : {},
+        ],
       },
       include: {
-        ratings: true
-      }
+        ratings: true,
+      },
     });
+
     const response = stores.map((store) => {
       const avgRating =
         store.ratings.length > 0
-          ? store.ratings.reduce((sum, r) => sum + r.rating, 0) /
-            store.ratings.length
+          ? store.ratings.reduce((sum, r) => sum + r.rating, 0) / store.ratings.length
           : null;
 
       const userRating =
         store.ratings.find((r) => r.userId === req.user.id)?.rating || null;
 
       return {
+        id: store.id,
         store_name: store.name,
         address: store.address,
         avg_rating: avgRating,
-        user_rating: userRating
+        user_rating: userRating,
       };
     });
 
@@ -50,34 +52,29 @@ router.post("/stores/:id/ratings", authMiddleware, async (req, res) => {
     const { rating } = req.body;
     const storeId = parseInt(req.params.id);
 
-
     if (!rating || rating < 1 || rating > 5) {
-      return res
-        .status(400)
-        .json({ error: "Rating must be a number between 1 and 5" });
+      return res.status(400).json({ error: "Rating must be a number between 1 and 5" });
     }
 
     const existing = await prisma.rating.findUnique({
       where: {
         userId_storeId: {
           userId: req.user.id,
-          storeId
-        }
-      }
+          storeId,
+        },
+      },
     });
 
     if (existing) {
-      return res
-        .status(400)
-        .json({ error: "You already submitted a rating for this store" });
+      return res.status(400).json({ error: "You already submitted a rating for this store" });
     }
 
     const newRating = await prisma.rating.create({
       data: {
         rating,
         userId: req.user.id,
-        storeId
-      }
+        storeId,
+      },
     });
 
     res.status(201).json(newRating);
@@ -94,19 +91,17 @@ router.put("/stores/:id/ratings", authMiddleware, async (req, res) => {
     const storeId = parseInt(req.params.id);
 
     if (!rating || rating < 1 || rating > 5) {
-      return res
-        .status(400)
-        .json({ error: "Rating must be a number between 1 and 5" });
+      return res.status(400).json({ error: "Rating must be a number between 1 and 5" });
     }
 
     const updated = await prisma.rating.update({
       where: {
         userId_storeId: {
           userId: req.user.id,
-          storeId
-        }
+          storeId,
+        },
       },
-      data: { rating }
+      data: { rating },
     });
 
     res.json(updated);
